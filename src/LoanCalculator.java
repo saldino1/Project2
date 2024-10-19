@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.lang.Math;
 
 public class LoanCalculator {
 
@@ -12,10 +13,50 @@ public class LoanCalculator {
             
             option = scanner.next();
             
-            if (option.equalsIgnoreCase("P") || option.equals("T")) {
+            if (option.equalsIgnoreCase("P") || option.equalsIgnoreCase("T")) {
                 
-                //Add code here to gather user input and output payment or table
+                // Loan entering + error handling
+                System.out.print("Loan Amount(1000 - 1000000): ");
+                if(!scanner.hasNextInt()){
+                    System.out.println("Invalid Amount");
+                    continue;
+                }
+                int loanAmount = scanner.nextInt();
+                if(loanAmount < 1000 || loanAmount > 1000000){
+                    System.out.println("Invalid Amount");
+                    continue;
+                }
+
+                // Rate entering + error handling
+                System.out.print("Interest Rate(1 - 10): ");
+                if(!scanner.hasNextInt()){
+                    System.out.println("Invalid Rate");
+                    continue;
+                }
+                int interestRate = scanner.nextInt();
+                if(interestRate < 1 || interestRate > 10){
+                    System.out.println("Invalid Rate");
+                    continue;
+                }
+
+                // Months entering + error handling
+                System.out.print("Number of Months(2 - 360): ");
+                if(!scanner.hasNextInt()){
+                    System.out.println("Invalid months");
+                    continue;
+                }
+                int monthsNum = scanner.nextInt();
+                if(monthsNum < 2 || monthsNum > 360){
+                    System.out.println("Invalid months");
+                    continue;
+                }
                 
+                if(option.equalsIgnoreCase("P")) {
+                    System.out.printf("Monthly Payment: $%.2f\n", calculatePayment(loanAmount, interestRate, monthsNum));
+                }
+                if(option.equalsIgnoreCase("T")){
+                    System.out.print(toString(calculatePayment(loanAmount, interestRate, monthsNum), getTable(loanAmount, interestRate, monthsNum)));
+                }
             }
             else if (!option.equalsIgnoreCase("Q")) {
                 
@@ -51,7 +92,25 @@ public class LoanCalculator {
     //NOTE: You must check for these error conditions in the order given above.
     public static double calculatePayment(int loanAmount, int annualInterestRate,
     int numberOfMonths) { 
-        return 0;
+        if(loanAmount <= 0) {
+            throw new IllegalArgumentException("Invalid amount");
+        }
+        if(annualInterestRate <= 0) {
+            throw new IllegalArgumentException("Invalid rate");
+        }
+        if(numberOfMonths <= 0) {
+            throw new IllegalArgumentException("Invalid months");
+        }
+
+        double monthlyInterest = (annualInterestRate/100.0)/12.0;
+        if (monthlyInterest == 0) {
+            return loanAmount / (double) numberOfMonths;    
+        }
+        double numerator = monthlyInterest * Math.pow((1 + monthlyInterest), numberOfMonths);
+        double denominator = Math.pow((1 + monthlyInterest), numberOfMonths) - 1;
+        double fraction = numerator/denominator;
+
+        return fraction * loanAmount;
     }
 
     //Returns a 2D array of doubles with a row for each month and
@@ -78,7 +137,28 @@ public class LoanCalculator {
     //and also check for the error conditions
     public static double[][] getTable(int loanAmount, int annualInterestRate,
     int numberOfMonths ) {
-        return null;
+        if (loanAmount <= 0) {
+            throw new IllegalArgumentException("Invalid amount");
+        }
+        if (annualInterestRate <= 0) {
+            throw new IllegalArgumentException("Invalid rate");
+        }
+        if (numberOfMonths <= 0) {
+            throw new IllegalArgumentException("Invalid months");
+        }
+        double[][] table = new double[numberOfMonths][3];
+        double remainingAmount = loanAmount;
+        double payment = calculatePayment(loanAmount, annualInterestRate, numberOfMonths);
+        for(int i = 0; i < numberOfMonths; ++i) {
+            table[i][0] = remainingAmount * ((annualInterestRate/100.0)/12.0);
+            table[i][1] = payment - table[i][0];
+            remainingAmount -= table[i][1];
+            table[i][2] = remainingAmount;
+            if (remainingAmount < 0) {
+                remainingAmount = 0;
+            }
+        }
+        return table;
     }
 
     //Returns a formatted version of the amortization table for a loan
@@ -100,7 +180,24 @@ public class LoanCalculator {
     //
     //NOTE: You must check for these error conditions in the order given above.
     public static String toString(double payment, double[][] table) {
-        return null;                
+        if (table == null) {
+            throw new IllegalArgumentException("Null table");
+        }
+        if (table.length == 0) {
+            throw new IllegalArgumentException("Empty table");
+        }
+        for (double[] row : table) {
+            if (row.length != 3) {
+                throw new IllegalArgumentException("Invalid rows");
+            }
+        }
+        String output = "Number  Payment  Interest     Loan   Balance\n--------------------------------------------\n";
+        //String[] outputs = new String[table.length];
+        for(int i = 0; i < table.length; ++i){
+            output = output + toString(i + 1, payment, table[i][0], table[i][1], table[i][2]) + "\n";
+        }
+        
+        return output;                
     }
 
 
